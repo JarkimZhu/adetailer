@@ -18,8 +18,8 @@ from pydantic import (
     validator,
 )
 
-cn_model_regex = r".*(inpaint|tile|scribble|lineart|openpose|depth).*|^None$"
-cn_module_regex = r".*(inpaint|tile|pidi|lineart|openpose|depth).*|^None$"
+cn_model_regex = r".*(inpaint|tile|scribble|lineart|openpose|depth|faceid).*|^None$"
+cn_module_regex = r".*(inpaint|tile|pidi|lineart|openpose|depth|face_id).*|^None$"
 
 
 @dataclass
@@ -84,6 +84,7 @@ class ADetailerArgs(BaseModel, extra=Extra.forbid):
     ad_controlnet_weight: confloat(ge=0.0, le=1.0) = 1.0
     ad_controlnet_guidance_start: confloat(ge=0.0, le=1.0) = 0.0
     ad_controlnet_guidance_end: confloat(ge=0.0, le=1.0) = 1.0
+    ad_controlnet_input_image: str = None
     is_api: bool = True
 
     @validator("is_api", pre=True)

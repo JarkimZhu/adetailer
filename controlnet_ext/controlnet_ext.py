@@ -49,6 +49,7 @@ cn_model_module = {
     "openpose": "openpose_full",
     "tile": "tile_resample",
     "depth": "depth_midas",
+    "ip-adapter-faceid-plusv2": "ip-adapter_face_id_plus"
 }
 cn_model_regex = re.compile("|".join(cn_model_module.keys()))
 
@@ -68,13 +69,14 @@ class ControlNetExt:
         self.cn_models.extend(m for m in models if cn_model_regex.search(m))
 
     def update_scripts_args(
-        self,
-        p,
-        model: str,
-        module: str | None,
-        weight: float,
-        guidance_start: float,
-        guidance_end: float,
+            self,
+            p,
+            model: str,
+            module: str | None,
+            weight: float,
+            guidance_start: float,
+            guidance_end: float,
+            input_image: str | None,
     ):
         if (not self.cn_available) or model == "None":
             return
@@ -87,6 +89,13 @@ class ControlNetExt:
             else:
                 module = None
 
+        inpaint_crop_input_image = True
+        if (module == "ip-adapter_face_id_plus"
+                and input_image is None
+                and self.extract_face_id_from_controlnet(p.script_args) is not None):
+            input_image = self.extract_face_id_from_controlnet(p.script_args)
+            inpaint_crop_input_image = False
+
         cn_units = [
             self.external_cn.ControlNetUnit(
                 model=model,
@@ -96,6 +105,8 @@ class ControlNetExt:
                 guidance_start=guidance_start,
                 guidance_end=guidance_end,
                 pixel_perfect=True,
+                image=input_image,
+                inpaint_crop_input_image=inpaint_crop_input_image
             )
         ]
 
@@ -106,6 +117,13 @@ class ControlNetExt:
                 raise
             msg = "[-] Adetailer: ControlNet option not available in WEBUI version lower than 1.6.0 due to updates in ControlNet"
             raise RuntimeError(msg) from e
+
+    def extract_face_id_from_controlnet(self, script_args: tuple):
+        for arg in script_args:
+            if (isinstance(arg, self.external_cn.ControlNetUnit)
+                    and arg.module == "ip-adapter_face_id_plus"):
+                return arg.image["image"]
+        return None
 
 
 def get_cn_model_dirs() -> list[Path]:
@@ -131,7 +149,7 @@ def _get_cn_models() -> list[str]:
     Since we can't import ControlNet, we use a function that does something like
     controlnet's `list(global_state.cn_models_names.values())`.
     """
-    cn_model_exts = (".pt", ".pth", ".ckpt", ".safetensors")
+    cn_model_exts = (".pt", ".pth", ".ckpt", ".safetensors", ".bin")
     dirs = get_cn_model_dirs()
     name_filter = shared.opts.data.get("control_net_models_name_filter", "")
     name_filter = name_filter.strip(" ").lower()
@@ -144,9 +162,9 @@ def _get_cn_models() -> list[str]:
 
         for p in base.rglob("*"):
             if (
-                p.is_file()
-                and p.suffix in cn_model_exts
-                and cn_model_regex.search(p.name)
+                    p.is_file()
+                    and p.suffix in cn_model_exts
+                    and cn_model_regex.search(p.name)
             ):
                 if name_filter and name_filter not in p.name.lower():
                     continue

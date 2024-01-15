@@ -27,6 +27,7 @@ cn_module_choices = {
     "tile": ["tile_resample", "tile_colorfix", "tile_colorfix+sharp"],
     "scribble": ["t2ia_sketch_pidi"],
     "depth": ["depth_midas", "depth_hand_refiner"],
+    "ip-adapter-faceid-plusv2": ["ip-adapter_face_id_plus"],
 }
 
 
