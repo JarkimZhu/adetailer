@@ -152,9 +152,7 @@ def one_ui_group(n: int, is_img2img: bool, webui_info: WebuiInfo):
 
     with gr.Row():
         model_choices = (
-            [*webui_info.ad_model_list, "None"]
-            if n == 0
-            else ["None", *webui_info.ad_model_list]
+            ["None", *webui_info.ad_model_list]
         )
 
         w.ad_model = gr.Dropdown(

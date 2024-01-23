@@ -89,7 +89,7 @@ class ControlNetExt:
             else:
                 module = None
 
-        inpaint_crop_input_image = True
+        inpaint_crop_input_image = True if input_image is None else False
         if (module == "ip-adapter_face_id_plus"
                 and input_image is None
                 and self.extract_face_id_from_controlnet(p.script_args) is not None):
@@ -123,6 +123,11 @@ class ControlNetExt:
             if (isinstance(arg, self.external_cn.ControlNetUnit)
                     and arg.module == "ip-adapter_face_id_plus"):
                 return arg.image["image"]
+            elif (isinstance(arg, dict)
+                  and arg.get("module") == "ip-adapter_face_id_plus"
+                  and arg.get("input_image") is not None):
+                return arg["input_image"]
+
         return None
 
 
